@@ -1,0 +1,103 @@
+module BounceSimulator
+
+in  lbtn     : Double,  # 左ボタン(値は水平方向の加速速度)
+    inputLBtn: Bool,    # 左ボタンが押されたかを示すフラグ
+    rbtn     : Double,  # 中央ボタン(値は垂直方向の加速速度)
+    inputRBtn: Bool,    # 右ボタンが押されたかを示すフラグ
+    cbtn     : Double,  # 右ボタン(値は水平方向の加速速度)module BounceSimulator
+    inputCBtn: Bool,    # 中央ボタンが押されたかを示すフラグ
+    tick     : Double,  # ゲーム画面の更新を行なった時の時刻
+                        # (値としてプログラム開始からの経過時間[s]を持つ)
+    time: Int           # プログラム開始からの経過時間[ms]
+
+out ballPosX             : Double,           # 円の描画
+    ballPosY             : Double,           #
+    outputDrawBall        : Bool,             # 円の描画を行うかを示すフラグ
+    numLBtnPressed        : Int,              # ボタンを押した際のスピーカーへの出力
+    numCBtnPressed        : Int,              #
+    numRBtnPressed        : Int,              #
+    outputNumButtonPressed: Bool              # スピーカーへの出力を行うかを示すフラグ
+
+use Std
+
+
+# 定数
+data deltaAccel     = 2.0               # 左右のボタンによって変化する加速度の大きさ
+data ballRadius     = 30.0              # 円の半径
+data gravityX       = 0.0               # 水平方向の重力加速度
+data gravityY       = -.9.8             # 垂直方向の重力加速度
+data leftWallPos    = -.120.0           # 左の壁の位置
+data rightWallPos   = 120.0             # 右の壁の位置
+data floorPos       = 0.0               # 床の位置
+data e              = 0.7               # 反発係数
+data dt             = 0.1               # 描画時間間隔
+
+# 出力時変値
+# num{L,C,R}BtnPressed の計算
+node init[0] numLBtnPressed =
+  if outputNumButtonPressed
+    then numLBtnPressed@last of cnt -> cnt + (if inputLBtn then 1 else 0)
+    else numLBtnPressed@last
+node init[0] numCBtnPressed =
+  if outputNumButtonPressed
+    then numCBtnPressed@last of cnt -> cnt + (if inputCBtn then 1 else 0)
+    else numCBtnPressed@last
+node init[0] numRBtnPressed =
+  if outputNumButtonPressed
+    then numRBtnPressed@last of cnt -> cnt + (if inputRBtn then 1 else 0)
+    else numRBtnPressed@last
+
+# ballPos の計算
+node init[1000] inputTickTiming = inputTickTiming@last + (if inputTick then 100 else 0)
+node inputTick = time > inputTickTiming@last
+
+node init[-.1.0] tickHistory =
+  if inputTick
+    then tick
+    else tickHistory@last
+node dt =
+  if tickHistory@last <. 0.0
+    then 0.0
+    else tickHistory -. tickHistory@last
+
+node accelX = gravityX
+node accelY = gravityY
+
+node velocityX = reflectedVelocityX@last +.
+  (if inputTick then accelX *. dt else 0.0) +.
+  (if inputLBtn then lbtn else 0.0) +.
+  (if inputRBtn then rbtn else 0.0)
+node velocityY = reflectedVelocityY@last +.
+  (if inputTick then accelY *. dt else 0.0) +.
+  (if inputCBtn then cbtn else 0.0)
+
+node init[0.0] reflectedVelocityX = velocityX *. (
+  if inputTick
+    then
+      (if (positionX@last -. ballRadius <. leftWallPos  && velocityX <. 0.0
+        || positionX@last +. ballRadius >. rightWallPos && velocityX >. 0.0)
+        then -.e
+        else 1.0)
+    else 1.0)
+node init[0.0] reflectedVelocityY = velocityY *. (
+  if inputTick
+    then
+      (if (positionY@last -. ballRadius <. floorPos && velocityY <. 0.0)
+        then -.e
+        else 1.0)
+    else 1.0)
+
+node init[0.0] positionX = positionX@last +. (
+  if inputTick
+    then reflectedVelocityX *. dt
+    else 0.0)
+node init[80.0] positionY = positionY@last +. (
+  if inputTick
+    then reflectedVelocityY *. dt
+    else 0.0)
+node ballPosX = positionX
+node ballPosY = positionY
+
+# 出力を行うかを入力の有無によって決定
+node outputDrawBall = inputTick
+node outputNumButtonPressed = inputLBtn || inputRBtn || inputCBtn
