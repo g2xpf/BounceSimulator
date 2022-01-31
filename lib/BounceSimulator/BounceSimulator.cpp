@@ -33,11 +33,11 @@ int node_memory_numRBtnPressed[2];
 double node_memory_dt[2];
 double node_memory_velocityX[2];
 double node_memory_velocityY[2];
-double node_memory_reflectedVelocityX[2];
-double node_memory_reflectedVelocityY[2];
 double node_memory_positionX[2];
 double node_memory_positionY[2];
+double node_memory_reflectedVelocityY[2];
 double node_memory_ballPosX[2];
+double node_memory_reflectedVelocityX[2];
 double node_memory_ballPosY[2];
 double gravityY;
 double floorPos;
@@ -67,15 +67,15 @@ static int init_numRBtnPressed();
 static int node_dt(double, double, double*);
 static int node_velocityX(double, int, double, double, int, double, int, double, double*);
 static int node_velocityY(double, int, double, double, int, double, double*);
-static int node_reflectedVelocityX(double, int, double, double*);
-static double init_reflectedVelocityX();
-static int node_reflectedVelocityY(double, int, double, double*);
-static double init_reflectedVelocityY();
 static int node_positionX(double, int, double, double, double*);
 static double init_positionX();
 static int node_positionY(double, int, double, double, double*);
 static double init_positionY();
+static int node_reflectedVelocityY(double, int, int, double, double*);
+static double init_reflectedVelocityY();
 static int node_ballPosX(double, double*);
+static int node_reflectedVelocityX(double, int, int, int, double, double*);
+static double init_reflectedVelocityX();
 static int node_ballPosY(double, double*);
 static double init_gravityY();
 static double init_floorPos();
@@ -270,32 +270,39 @@ static int node_velocityY(double reflectedVelocityY_at_last, int inputTick, doub
   *output = _plus__dot_(_plus__dot_(reflectedVelocityY_at_last, _tmp016), _tmp017);
   return 1;
 }
-static int node_reflectedVelocityX(double velocityX, int inputTick, double positionX_at_last, double* output) {
+static int node_positionX(double positionX_at_last, int inputTick, double velocityX, double dt, double* output) {
   double _tmp018;
   if (inputTick == 1) {
-    int _tmp020;
-    double _tmp019;
-    _tmp020 = _vertial__vertial_(_anpersand_anpersand(_lt__dot_(_minus__dot_(positionX_at_last, ballRadius), leftWallPos), _lt__dot_(velocityX, 0.0)), _anpersand_anpersand(_gt__dot_(_plus__dot_(positionX_at_last, ballRadius), rightWallPos), _gt__dot_(velocityX, 0.0)));
-    if (_tmp020 == 1) {
-      _tmp019 = _at__minus__dot_(e);
-    }
-    else {
-      _tmp019 = 1.0;
-    }
-    _tmp018 = _tmp019;
+    _tmp018 = _asterisk__dot_(velocityX, dt);
   }
   else {
-    _tmp018 = 1.0;
+    _tmp018 = 0.0;
   }
-  *output = _asterisk__dot_(velocityX, _tmp018);
+  *output = _plus__dot_(positionX_at_last, _tmp018);
   return 1;
 }
-static double init_reflectedVelocityX() {
+static double init_positionX() {
   return 0.0;
 }
-static int node_reflectedVelocityY(double velocityY, int inputTick, double positionY_at_last, double* output) {
-  double _tmp021;
+static int node_positionY(double positionY_at_last, int inputTick, double velocityY, double dt, double* output) {
+  double _tmp019;
   if (inputTick == 1) {
+    _tmp019 = _asterisk__dot_(velocityY, dt);
+  }
+  else {
+    _tmp019 = 0.0;
+  }
+  *output = _plus__dot_(positionY_at_last, _tmp019);
+  return 1;
+}
+static double init_positionY() {
+  return 80.0;
+}
+static int node_reflectedVelocityY(double velocityY, int inputTick, int inputCBtn, double positionY_at_last, double* output) {
+  int _tmp021;
+  double _tmp020;
+  _tmp021 = _vertial__vertial_(inputTick, inputCBtn);
+  if (_tmp021 == 1) {
     int _tmp023;
     double _tmp022;
     _tmp023 = _anpersand_anpersand(_lt__dot_(_minus__dot_(positionY_at_last, ballRadius), floorPos), _lt__dot_(velocityY, 0.0));
@@ -305,48 +312,45 @@ static int node_reflectedVelocityY(double velocityY, int inputTick, double posit
     else {
       _tmp022 = 1.0;
     }
-    _tmp021 = _tmp022;
+    _tmp020 = _tmp022;
   }
   else {
-    _tmp021 = 1.0;
+    _tmp020 = 1.0;
   }
-  *output = _asterisk__dot_(velocityY, _tmp021);
+  *output = _asterisk__dot_(velocityY, _tmp020);
   return 1;
 }
 static double init_reflectedVelocityY() {
   return 0.0;
 }
-static int node_positionX(double positionX_at_last, int inputTick, double reflectedVelocityX, double dt, double* output) {
-  double _tmp024;
-  if (inputTick == 1) {
-    _tmp024 = _asterisk__dot_(reflectedVelocityX, dt);
-  }
-  else {
-    _tmp024 = 0.0;
-  }
-  *output = _plus__dot_(positionX_at_last, _tmp024);
-  return 1;
-}
-static double init_positionX() {
-  return 0.0;
-}
-static int node_positionY(double positionY_at_last, int inputTick, double reflectedVelocityY, double dt, double* output) {
-  double _tmp025;
-  if (inputTick == 1) {
-    _tmp025 = _asterisk__dot_(reflectedVelocityY, dt);
-  }
-  else {
-    _tmp025 = 0.0;
-  }
-  *output = _plus__dot_(positionY_at_last, _tmp025);
-  return 1;
-}
-static double init_positionY() {
-  return 80.0;
-}
 static int node_ballPosX(double positionX, double* output) {
   *output = positionX;
   return 1;
+}
+static int node_reflectedVelocityX(double velocityX, int inputTick, int inputLBtn, int inputRBtn, double positionX, double* output) {
+  int _tmp025;
+  double _tmp024;
+  _tmp025 = _vertial__vertial_(inputTick, _vertial__vertial_(inputLBtn, inputRBtn));
+  if (_tmp025 == 1) {
+    int _tmp027;
+    double _tmp026;
+    _tmp027 = _vertial__vertial_(_anpersand_anpersand(_lt__dot_(_minus__dot_(positionX, ballRadius), leftWallPos), _lt__dot_(velocityX, 0.0)), _anpersand_anpersand(_gt__dot_(_plus__dot_(positionX, ballRadius), rightWallPos), _gt__dot_(velocityX, 0.0)));
+    if (_tmp027 == 1) {
+      _tmp026 = _at__minus__dot_(e);
+    }
+    else {
+      _tmp026 = 1.0;
+    }
+    _tmp024 = _tmp026;
+  }
+  else {
+    _tmp024 = 1.0;
+  }
+  *output = _asterisk__dot_(velocityX, _tmp024);
+  return 1;
+}
+static double init_reflectedVelocityX() {
+  return 0.0;
 }
 static int node_ballPosY(double positionY, double* output) {
   *output = positionY;
@@ -383,10 +387,10 @@ void ActivateBounceSimulator() {
   node_memory_numLBtnPressed[last_side] = init_numLBtnPressed();
   node_memory_numCBtnPressed[last_side] = init_numCBtnPressed();
   node_memory_numRBtnPressed[last_side] = init_numRBtnPressed();
-  node_memory_reflectedVelocityX[last_side] = init_reflectedVelocityX();
-  node_memory_reflectedVelocityY[last_side] = init_reflectedVelocityY();
   node_memory_positionX[last_side] = init_positionX();
   node_memory_positionY[last_side] = init_positionY();
+  node_memory_reflectedVelocityY[last_side] = init_reflectedVelocityY();
+  node_memory_reflectedVelocityX[last_side] = init_reflectedVelocityX();
   gravityY = init_gravityY();
   floorPos = init_floorPos();
   gravityX = init_gravityX();
@@ -425,15 +429,15 @@ void ActivateBounceSimulator() {
     Counter++;
     node_velocityY(node_memory_reflectedVelocityY[last_side], node_memory_inputTick[current_side], node_memory_accelY[current_side], node_memory_dt[current_side], node_memory_inputCBtn[current_side], node_memory_cbtn[current_side], &node_memory_velocityY[current_side]);
     Counter++;
-    node_reflectedVelocityX(node_memory_velocityX[current_side], node_memory_inputTick[current_side], node_memory_positionX[last_side], &node_memory_reflectedVelocityX[current_side]);
+    node_positionX(node_memory_positionX[last_side], node_memory_inputTick[current_side], node_memory_velocityX[current_side], node_memory_dt[current_side], &node_memory_positionX[current_side]);
     Counter++;
-    node_reflectedVelocityY(node_memory_velocityY[current_side], node_memory_inputTick[current_side], node_memory_positionY[last_side], &node_memory_reflectedVelocityY[current_side]);
+    node_positionY(node_memory_positionY[last_side], node_memory_inputTick[current_side], node_memory_velocityY[current_side], node_memory_dt[current_side], &node_memory_positionY[current_side]);
     Counter++;
-    node_positionX(node_memory_positionX[last_side], node_memory_inputTick[current_side], node_memory_reflectedVelocityX[current_side], node_memory_dt[current_side], &node_memory_positionX[current_side]);
-    Counter++;
-    node_positionY(node_memory_positionY[last_side], node_memory_inputTick[current_side], node_memory_reflectedVelocityY[current_side], node_memory_dt[current_side], &node_memory_positionY[current_side]);
+    node_reflectedVelocityY(node_memory_velocityY[current_side], node_memory_inputTick[current_side], node_memory_inputCBtn[current_side], node_memory_positionY[last_side], &node_memory_reflectedVelocityY[current_side]);
     Counter++;
     node_ballPosX(node_memory_positionX[current_side], &node_memory_ballPosX[current_side]);
+    Counter++;
+    node_reflectedVelocityX(node_memory_velocityX[current_side], node_memory_inputTick[current_side], node_memory_inputLBtn[current_side], node_memory_inputRBtn[current_side], node_memory_positionX[current_side], &node_memory_reflectedVelocityX[current_side]);
     Counter++;
     node_ballPosY(node_memory_positionY[current_side], &node_memory_ballPosY[current_side]);
     Counter++;
