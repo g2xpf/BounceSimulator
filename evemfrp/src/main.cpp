@@ -7,17 +7,21 @@
 #include <LovyanGFX.hpp>
 
 // 定数
-const int fontSize = 10;
-const int simulatorAreaWidth = 240;
-const int simulatorAreaHeight = 240;
-const int textAreaX = 240;
-const int textAreaY = 0;
-const int textAreaWidth = 80;
-const int textAreaHeight = 240;
+const int fontSize = 7; // M5Stack の TextSize(1) のサイズ
 const int displayWidth = 320;
 const int displayHeight = 240;
+const int simulatorAreaWidth = 240;
+const int simulatorAreaHeight = displayHeight;
+const int titleAreaX = simulatorAreaWidth;
+const int titleAreaY = 0;
+const int titleAreaWidth = displayWidth - simulatorAreaWidth;
+const int titleAreaHeight = fontSize * 5;
+const int textAreaX = simulatorAreaWidth;
+const int textAreaY = titleAreaHeight;
+const int textAreaWidth = titleAreaWidth;
+const int textAreaHeight = displayHeight - titleAreaHeight;
 const int ballRadius = 30;
-const float ballAccel = 30.0;
+const double ballAccel = 30.0;
 
 // 描画APIの初期化
 static LGFX lcd;
@@ -30,9 +34,26 @@ void ballPos2LcdCoord(float *ballPosX, float *ballPosY) {
   *ballPosY = simulatorAreaHeight - *ballPosY;
 }
 
+// タイトルの描画
+void drawTitle() {
+  LGFX_Sprite titleSprite(&lcd);
+  titleSprite.createSprite(titleAreaWidth, titleAreaHeight);
+
+  titleSprite.setColor(TFT_WHITE);
+  titleSprite.setTextSize(1);
+  titleSprite.setCursor(fontSize, fontSize);
+  titleSprite.print("EvEmfrp");
+  titleSprite.setCursor(fontSize, fontSize * 2);
+  titleSprite.print("Bounce");
+  titleSprite.setCursor(fontSize, fontSize * 3);
+  titleSprite.print("Simulator");
+  titleSprite.drawRect(0, 0, titleAreaWidth, titleAreaHeight, TFT_WHITE);
+  titleSprite.pushSprite(titleAreaX, titleAreaY, TFT_BLACK);
+  titleSprite.deleteSprite();
+}
+
 // ボタンのカウントを描画する関数
 void drawBtnCount(int numLBtnPressed, int numCBtnPressed, int numRBtnPressed) {
-  textAreaSprite.pushSprite(textAreaWidth, textAreaHeight, TFT_BLACK);
   textAreaSprite.setColor(TFT_WHITE);
   textAreaSprite.setCursor(fontSize, fontSize * 1);
   textAreaSprite.printf("Left  : %d", numLBtnPressed);
@@ -40,13 +61,14 @@ void drawBtnCount(int numLBtnPressed, int numCBtnPressed, int numRBtnPressed) {
   textAreaSprite.printf("Center: %d", numCBtnPressed);
   textAreaSprite.setCursor(fontSize, fontSize * 3);
   textAreaSprite.printf("Right : %d", numRBtnPressed);
+  textAreaSprite.drawRect(0, 0, textAreaWidth, textAreaHeight, TFT_WHITE);
   textAreaSprite.pushSprite(textAreaX, textAreaY, TFT_RED);
 }
 
 // ボールを描画する関数
-void drawBall(float *ballPosX, float *ballPosY) {
-  float x = *ballPosX;
-  float y = *ballPosY;
+void drawBall(const float ballPosX, const float ballPosY) {
+  float x = ballPosX;
+  float y = ballPosY;
   ballPos2LcdCoord(&x, &y);
 
   simulatorSprite.fillRect(0, 0, simulatorAreaWidth, simulatorAreaHeight,
@@ -78,21 +100,33 @@ float Input_tick() {
 // 出力時変値を用いた処理を記述する．
 void Output_ballPos(const Tuple2FloatFloat &ballPos) {
   // output ballPos
+
+  static int callCount = 0;
+  callCount++;
+  // lcd.setCursor(30, 30);
+  // lcd.printf("{%d} ballPos: (%lf, %lf)", callCount, ballPos._0, ballPos._1);
   drawBall(ballPos._0, ballPos._1);
 }
 
 void Output_numButtonPressed(const Tuple3IntIntInt &numButtonPressed) {
   // output numButtonPressed
-  drawBtnCount(numButtonPressed._0, numButtonPressed._1, numButtonPressed._2);
-  M5.Speaker.tone(440, 50);
+
+  static int callCount = 0;
+  callCount++;
+  lcd.setCursor(30, 30 + fontSize);
+  // lcd.printf("{%d} press state: (%d, %d, %d)", callCount,
+  // numButtonPressed._0,
+  //            numButtonPressed._1, numButtonPressed._2);
+
+  drawBtnCount(numButtonPressed._0, numButtonPressed._1,
+               numButtonPressed._2); // M5.Speaker.tone(440, 50);
 }
 
 hw_timer_t *timer1 = nullptr;
 void InitTimer(int offset_ms, int interval_ms) {
   // ここでタイマーの初期化を行う．
-  // 引数の offset と interval は PbEmfrp
-  // の処理系によって計算されたタイマー割り
-  // 込みの開始時刻と周期であり，この値を用いてプログラマが
+  // 引数の offset と interval は EvEmfrp の処理系によって計算された
+  // タイマー割り込みの開始時刻と周期であり，この値を用いてプログラマが
   // タイマーを初期化する．
 
   M5.begin();
@@ -101,6 +135,8 @@ void InitTimer(int offset_ms, int interval_ms) {
   lcd.init();
   lcd.setRotation(1);
   lcd.setBrightness(128);
+
+  drawTitle();
 
   simulatorSprite.createSprite(simulatorAreaWidth, simulatorAreaHeight);
   textAreaSprite.createSprite(textAreaWidth, textAreaHeight);
@@ -115,14 +151,14 @@ void InitTimer(int offset_ms, int interval_ms) {
   timerAlarmEnable(timer1);
 
   // 左ボタン
-  pinMode(GPIO_NUM_37, INPUT);
-  attachInterrupt(GPIO_NUM_37, lbtnISR, FALLING);
+  pinMode(GPIO_NUM_39, INPUT);
+  attachInterrupt(GPIO_NUM_39, lbtnISR, FALLING);
 
   // 中央ボタン
   pinMode(GPIO_NUM_38, INPUT);
   attachInterrupt(GPIO_NUM_38, cbtnISR, FALLING);
 
   // 右ボタン
-  pinMode(GPIO_NUM_39, INPUT);
-  attachInterrupt(GPIO_NUM_39, rbtnISR, FALLING);
+  pinMode(GPIO_NUM_37, INPUT);
+  attachInterrupt(GPIO_NUM_37, rbtnISR, FALLING);
 }
