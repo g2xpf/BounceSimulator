@@ -58,16 +58,19 @@ node velocityX = reflectedVelocityX@last[1] +
 node velocityY = reflectedVelocityY@last[1] +
   (accelY * dt @< mergeFloat >@ cbtn)
 
+node lastPositionX = positionX@last[1]
+node lastPositionY = positionY@last[1]
+
 node init[0.0] reflectedVelocityX = velocityX *
-  (if (positionX@now - BALL_RADIUS < LEFT_WALL_POS  && velocityX < 0.0
-    || positionX@now + BALL_RADIUS > RIGHT_WALL_POS && velocityX > 0.0)
+  (if (lastPositionX@now - BALL_RADIUS < LEFT_WALL_POS  && velocityX < 0.0
+    || lastPositionX@now + BALL_RADIUS > RIGHT_WALL_POS && velocityX > 0.0)
     then -E
     else 1.0)
-node init[0.0] reflectedVelocityY = velocityY *
-  (if positionY@now - BALL_RADIUS < FLOOR_POS && velocityY < 0.0
+node init[0.0] reflectedVelocityY = velocityY +
+  (if lastPositionY@now - BALL_RADIUS < FLOOR_POS && velocityY < 0.0
     then -E
     else 1.0)
-node init[0.0] positionX              = positionX@last[1] + velocityX @> 'positionX * dt
-node init[INIT_BALL_HEIGHT] positionY = positionY@last[1] + velocityY @> 'positionY * dt
+node init[0.0] positionX              = lastPositionX + reflectedVelocityX @> 'positionX * dt
+node init[INIT_BALL_HEIGHT] positionY = lastPositionY + reflectedVelocityY @> 'positionY * dt
 
 node ballPos = (positionX, positionY)

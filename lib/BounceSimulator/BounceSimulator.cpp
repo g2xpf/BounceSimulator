@@ -1,449 +1,399 @@
 #include "BounceSimulator.h"
-/* Primitive functions (Macros) */
-#define _plus__dot_(a, b) (a + b)
-#define _asterisk__dot_(a, b) (a * b)
-#define _gt_(a, b) (a > b)
-#define _plus_(a, b) (a + b)
-#define _vertial__vertial_(a, b) (a || b)
-#define _anpersand_anpersand(a, b) (a && b)
-#define _lt__dot_(a, b) (a < b)
-#define _minus__dot_(a, b) (a - b)
-#define _gt__dot_(a, b) (a > b)
-#define _at__minus__dot_(a) (-a)
-/* Data types */
-/* Global variables */
-double node_memory_lbtn[2];
-int node_memory_inputLBtn[2];
-double node_memory_rbtn[2];
-int node_memory_inputRBtn[2];
-double node_memory_cbtn[2];
-int node_memory_inputCBtn[2];
-double node_memory_tick[2];
-int node_memory_time[2];
-int node_memory_inputTick[2];
-double node_memory_accelX[2];
-double node_memory_accelY[2];
-int node_memory_outputNumButtonPressed[2];
-int node_memory_inputTickTiming[2];
-double node_memory_tickHistory[2];
-int node_memory_outputDrawBall[2];
-int node_memory_numLBtnPressed[2];
-int node_memory_numCBtnPressed[2];
-int node_memory_numRBtnPressed[2];
-double node_memory_dt[2];
-double node_memory_velocityX[2];
-double node_memory_velocityY[2];
-double node_memory_positionX[2];
-double node_memory_positionY[2];
-double node_memory_reflectedVelocityY[2];
-double node_memory_ballPosX[2];
-double node_memory_reflectedVelocityX[2];
-double node_memory_ballPosY[2];
-double gravityY;
-double floorPos;
-double gravityX;
-double e;
-double rightWallPos;
-double leftWallPos;
-double ballRadius;
-int Counter = 1;
-int NodeSize = 19;
-/* Static prototypes */
-static int node_inputTick(int, int, int*);
-static int node_accelX(double*);
-static int node_accelY(double*);
-static int node_outputNumButtonPressed(int, int, int, int*);
-static int node_inputTickTiming(int, int, int*);
-static int init_inputTickTiming();
-static int node_tickHistory(int, double, double, double*);
-static double init_tickHistory();
-static int node_outputDrawBall(int, int*);
-static int node_numLBtnPressed(int, int, int, int*);
-static int init_numLBtnPressed();
-static int node_numCBtnPressed(int, int, int, int*);
-static int init_numCBtnPressed();
-static int node_numRBtnPressed(int, int, int, int*);
-static int init_numRBtnPressed();
-static int node_dt(double, double, double*);
-static int node_velocityX(double, int, double, double, int, double, int, double, double*);
-static int node_velocityY(double, int, double, double, int, double, double*);
-static int node_positionX(double, int, double, double, double*);
-static double init_positionX();
-static int node_positionY(double, int, double, double, double*);
-static double init_positionY();
-static int node_reflectedVelocityY(double, int, int, double, double*);
-static double init_reflectedVelocityY();
-static int node_ballPosX(double, double*);
-static int node_reflectedVelocityX(double, int, int, int, double, double*);
-static double init_reflectedVelocityX();
-static int node_ballPosY(double, double*);
-static double init_gravityY();
-static double init_floorPos();
-static double init_gravityX();
-static double init_e();
-static double init_rightWallPos();
-static double init_leftWallPos();
-static double init_ballRadius();
-static void refreshMark();
-extern void Input(double*, int*, double*, int*, double*, int*, double*, int*);
-extern void Output(double*, double*, int*, int*, int*, int*, int*);
-/* Functions, Constructors, GCMarkers, etc... */
-static int node_inputTick(int time, int inputTickTiming_at_last, int* output) {
-  *output = _gt_(time, inputTickTiming_at_last);
-  return 1;
+// #include <freertos/FreeRTOS.h>
+#include <M5Stack.h>
+
+// 時変値を管理するグローバル変数の宣言
+// 入力時変値
+float node_lbtn[1];
+int node_lbtn_index = 0;
+float node_cbtn[1];
+int node_cbtn_index = 0;
+float node_rbtn[1];
+int node_rbtn_index = 0;
+float node_tick[1];
+int node_tick_index = 0;
+
+// 出力時変値
+Tuple2FloatFloat node_ballPos[1];
+int node_ballPos_index = 0;
+Tuple3IntIntInt node_numButtonPressed[1];
+int node_numButtonPressed_index = 0;
+
+// その他の時変値
+const float node_DELTA_ACCEL = 2.0;
+const float node_BALL_RADIUS = 30.0;
+const float node_GRAVITY_X = 0.0;
+const float node_GRAVITY_Y = -9.8;
+const float node_LEFT_WALL_POS = -120.0;
+const float node_RIGHT_WALL_POS = 120.0;
+const float node_FLOOR_POS = 0.0;
+const float node_E = 0.7;
+const float node_INIT_BALL_HEIGHT = node_BALL_RADIUS + 50.0;
+const float node_accelX = node_GRAVITY_X;
+const float node_accelY = node_GRAVITY_Y;
+
+int node_numLBtnPressed[2];
+int node_numLBtnPressed_index = 0;
+int node_numCBtnPressed[2];
+int node_numCBtnPressed_index = 0;
+int node_numRBtnPressed[2];
+int node_numRBtnPressed_index = 0;
+Tuple3IntIntInt node_numLBtnPressedSync[1];
+int node_numLBtnPressedSync_index = 0;
+Tuple3IntIntInt node_numCBtnPressedSync[1];
+int node_numCBtnPressedSync_index = 0;
+Tuple3IntIntInt node_numRBtnPressedSync[1];
+int node_numRBtnPressedSync_index = 0;
+float node_tickHistory[2];
+int node_tickHistory_index = 0;
+float node_dt[1];
+int node_dt_index = 0;
+float node_velocityX[1];
+int node_velocityX_index = 0;
+float node_velocityY[1];
+int node_velocityY_index = 0;
+float node_lastPositionX[1];
+int node_lastPositionX_index = 0;
+float node_lastPositionY[1];
+int node_lastPositionY_index = 0;
+float node_reflectedVelocityX[2];
+int node_reflectedVelocityX_index = 0;
+float node_reflectedVelocityY[2];
+int node_reflectedVelocityY_index = 0;
+float node_positionX[2];
+int node_positionX_index = 0;
+float node_positionY[2];
+int node_positionY_index = 0;
+
+inline int node_numCBtnPressed_now() {
+  return node_numCBtnPressed[node_numCBtnPressed_index];
 }
-static int node_accelX(double* output) {
-  *output = gravityX;
-  return 1;
+inline int node_numRBtnPressed_now() {
+  return node_numRBtnPressed[node_numRBtnPressed_index];
 }
-static int node_accelY(double* output) {
-  *output = gravityY;
-  return 1;
+inline int node_numLBtnPressed_now() {
+  return node_numLBtnPressed[node_numLBtnPressed_index];
 }
-static int node_outputNumButtonPressed(int inputLBtn, int inputRBtn, int inputCBtn, int* output) {
-  *output = _vertial__vertial_(inputLBtn, _vertial__vertial_(inputRBtn, inputCBtn));
-  return 1;
+inline float node_lastPositionX_now() {
+  return node_lastPositionX[node_lastPositionX_index];
 }
-static int node_inputTickTiming(int inputTickTiming_at_last, int inputTick, int* output) {
-  int _tmp000;
-  if (inputTick == 1) {
-    _tmp000 = 100;
+inline float node_lastPositionY_now() {
+  return node_lastPositionY[node_lastPositionY_index];
+}
+
+// 関数
+float toCount(float accel) { return 1; }
+Tuple3IntIntInt mergeTupleInt3(Tuple3IntIntInt lhs, Tuple3IntIntInt rhs) {
+  return lhs;
+}
+float mergeFloat(float lhs, float rhs) { return 1; }
+
+// ThermoHygrometerMain.cpp で定義される関数の宣言
+// 入力時変値
+extern float Input_lbtn();
+extern float Input_rbtn();
+extern float Input_cbtn();
+extern float Input_tick();
+// 出力時変値
+extern void Output_ballPos(const Tuple2FloatFloat &ballPos);
+extern void Output_numButtonPressed(const Tuple3IntIntInt &numButtonPressed);
+
+extern void InitTimer(int offset_ms, int interval_ms);
+
+// ここで全時変値の初期化を行う
+void InitBounceSimulator() {
+  node_numLBtnPressed[0] = 0;
+  node_numCBtnPressed[0] = 0;
+  node_numRBtnPressed[0] = 0;
+  node_tickHistory[0] = -1.0;
+  node_reflectedVelocityX[0] = 0.0;
+  node_reflectedVelocityY[0] = 0.0;
+  node_positionX[0] = 0.0;
+  node_positionY[0] = node_INIT_BALL_HEIGHT;
+}
+
+// ----------------------------------------------------------------
+
+// 入力時変値から出力時変値の計算を行う．
+#define TIMER_ISR_BIT 0x01
+#define LBTN_ISR_BIT 0x02
+#define RBTN_ISR_BIT 0x03
+#define CBTN_ISR_BIT 0x04
+
+// タスクハンドラ
+static TaskHandle_t xHandlingTask;
+
+// タイマー割り込みのハンドラの生成
+void timerISR(void) {
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  xTaskNotifyFromISR(xHandlingTask, TIMER_ISR_BIT, eSetBits,
+                     &xHigherPriorityTaskWoken);
+  if (xHigherPriorityTaskWoken) {
+    portYIELD_FROM_ISR();
   }
-  else {
-    _tmp000 = 0;
+}
+
+// 非周期的時変値の割り込みハンドラ
+void lbtnISR(void) {
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  xTaskNotifyFromISR(xHandlingTask, LBTN_ISR_BIT, eSetBits,
+                     &xHigherPriorityTaskWoken);
+  if (xHigherPriorityTaskWoken) {
+    portYIELD_FROM_ISR();
   }
-  *output = _plus_(inputTickTiming_at_last, _tmp000);
-  return 1;
 }
-static int init_inputTickTiming() {
-  return 1000;
-}
-static int node_tickHistory(int inputTick, double tick, double tickHistory_at_last, double* output) {
-  double _tmp001;
-  if (inputTick == 1) {
-    _tmp001 = tick;
+
+void rbtnISR(void) {
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  xTaskNotifyFromISR(xHandlingTask, RBTN_ISR_BIT, eSetBits,
+                     &xHigherPriorityTaskWoken);
+  if (xHigherPriorityTaskWoken) {
+    portYIELD_FROM_ISR();
   }
-  else {
-    _tmp001 = tickHistory_at_last;
+}
+
+void cbtnISR(void) {
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  xTaskNotifyFromISR(xHandlingTask, CBTN_ISR_BIT, eSetBits,
+                     &xHigherPriorityTaskWoken);
+  if (xHigherPriorityTaskWoken) {
+    portYIELD_FROM_ISR();
   }
-  *output = _tmp001;
-  return 1;
 }
-static double init_tickHistory() {
-  return _at__minus__dot_(1.0);
+
+// 時変値更新を行うかを決定するフラグ
+// '(1000, 100)
+bool cond_1;
+
+// タイマー割り込みの回数を数えるカウンタ
+int Counter = 0;
+void Update_timer() {
+  // タイマー割り込み回数を更新
+  Counter++;
+
+  // フラグの更新
+  cond_1 = Counter >= 10 && (Counter - 10) % 1 == 0;
+
+  // インデックスの更新
+  if (cond_1) {
+    node_tick_index = (node_tick_index + 0) % 1;
+    node_tickHistory_index = (node_tickHistory_index + 1) % 2;
+    node_dt_index = (node_dt_index + 0) % 1;
+    node_velocityX_index = (node_velocityX_index + 0) % 1;
+    node_velocityY_index = (node_velocityY_index + 0) % 1;
+    node_lastPositionX_index = (node_lastPositionX_index + 0) % 1;
+    node_lastPositionY_index = (node_lastPositionY_index + 0) % 1;
+    node_reflectedVelocityX_index = (node_reflectedVelocityX_index + 1) % 2;
+    node_reflectedVelocityY_index = (node_reflectedVelocityY_index + 1) % 2;
+    node_positionX_index = (node_positionX_index + 1) % 2;
+    node_positionY_index = (node_positionY_index + 1) % 2;
+    node_ballPos_index = (node_ballPos_index + 0) % 1;
+  }
+
+  // 入力時変値の設定
+  if (cond_1) {
+    node_tick[node_tick_index] = Input_tick();
+  }
+
+  // 時変値の更新
+  if (cond_1) {
+    node_tickHistory[node_tickHistory_index] = node_tick[node_tick_index];
+    node_dt[node_dt_index] =
+        node_tickHistory[(node_tickHistory_index + 1) % 2] < 0.0
+            ? 0.0
+            : node_tickHistory[node_tickHistory_index] -
+                  node_tickHistory[(node_tickHistory_index + 1) % 2];
+    node_velocityX[node_velocityX_index] =
+        node_reflectedVelocityX[(node_reflectedVelocityX_index + 1) % 2] +
+        node_accelX * node_dt[node_dt_index];
+    node_velocityY[node_velocityY_index] =
+        node_reflectedVelocityY[(node_reflectedVelocityY_index + 1) % 2] +
+        node_accelY * node_dt[node_dt_index];
+    node_lastPositionX[node_lastPositionX_index] =
+        node_positionX[(node_positionX_index + 1) % 2];
+    node_lastPositionY[node_lastPositionY_index] =
+        node_positionY[(node_positionY_index + 1) % 2];
+    node_reflectedVelocityX[node_reflectedVelocityX_index] =
+        node_velocityX[node_velocityX_index] *
+        (((node_lastPositionX_now() - node_BALL_RADIUS < node_LEFT_WALL_POS &&
+           node_velocityX[node_velocityX_index] < 0.0) ||
+          (node_lastPositionX_now() + node_BALL_RADIUS > node_RIGHT_WALL_POS &&
+           node_velocityX[node_velocityX_index] > 0.0))
+             ? -node_E
+             : 1.0);
+    node_reflectedVelocityY[node_reflectedVelocityY_index] =
+        node_velocityY[node_velocityY_index] *
+        ((node_lastPositionY_now() - node_BALL_RADIUS < node_FLOOR_POS &&
+          node_velocityY[node_velocityY_index] < -0.0)
+             ? -node_E
+             : 1.0);
+    node_positionX[node_positionX_index] =
+        node_lastPositionX[node_lastPositionX_index] +
+        node_reflectedVelocityX[node_reflectedVelocityX_index] *
+            node_dt[node_dt_index];
+    node_positionY[node_positionY_index] =
+        node_lastPositionY[node_lastPositionY_index] +
+        node_reflectedVelocityY[node_reflectedVelocityY_index] *
+            node_dt[node_dt_index];
+    node_ballPos[node_ballPos_index] = Tuple2FloatFloat{
+        ._0 = node_positionX[node_positionX_index],
+        ._1 = node_positionY[node_positionY_index],
+    };
+  }
+
+  // 出力
+  if (cond_1) {
+    Output_ballPos(node_ballPos[node_ballPos_index]);
+  }
 }
-static int node_outputDrawBall(int inputTick, int* output) {
-  *output = inputTick;
-  return 1;
+
+void Update_lbtn() {
+  // インデックスの更新
+  node_lbtn_index = (node_lbtn_index + 0) % 1;
+  node_numLBtnPressed_index = (node_numLBtnPressed_index + 1) % 2;
+  node_numLBtnPressedSync_index = (node_numLBtnPressedSync_index + 0) % 1;
+  node_velocityX_index = (node_velocityX_index + 0) % 1;
+  node_reflectedVelocityX_index = (node_reflectedVelocityX_index + 0) % 1;
+  node_numButtonPressed_index = (node_numButtonPressed_index + 0) % 1;
+
+  // 入力時変値の設定
+  node_lbtn[node_lbtn_index] = Input_lbtn();
+
+  // 時変値の更新
+  node_numLBtnPressed[node_numLBtnPressed_index] =
+      node_numLBtnPressed[(node_numLBtnPressed_index + 1) % 2] +
+      toCount(node_lbtn[node_lbtn_index]);
+  node_numLBtnPressedSync[node_numLBtnPressedSync_index] = Tuple3IntIntInt{
+      ._0 = node_numLBtnPressed[node_numLBtnPressed_index],
+      ._1 = node_numCBtnPressed_now(),
+      ._2 = node_numRBtnPressed_now(),
+  };
+  node_numButtonPressed[node_numButtonPressed_index] =
+      node_numLBtnPressedSync[node_numLBtnPressedSync_index];
+  node_velocityX[node_velocityX_index] =
+      node_reflectedVelocityX[(node_reflectedVelocityX_index + 1) % 2] +
+      node_lbtn[node_lbtn_index];
+  node_reflectedVelocityX[node_reflectedVelocityX_index] =
+      node_velocityX[node_velocityX_index] *
+      ((node_lastPositionY_now() - node_BALL_RADIUS < node_FLOOR_POS &&
+        node_velocityY[node_velocityY_index] < 0.0)
+           ? -node_E
+           : 1.0);
+
+  //出力
+  Output_numButtonPressed(node_numButtonPressed[node_numButtonPressed_index]);
 }
-static int node_numLBtnPressed(int outputNumButtonPressed, int inputLBtn, int numLBtnPressed_at_last, int* output) {
-  int _tmp002;
-  if (outputNumButtonPressed == 1) {
-    int _tmp003;
-    if (1) {
-      int pvar0_cnt = numLBtnPressed_at_last;
-      int _tmp004;
-      if (inputLBtn == 1) {
-        _tmp004 = 1;
+
+void Update_cbtn() {
+  // インデックスの更新
+  node_cbtn_index = (node_cbtn_index + 0) % 1;
+  node_numCBtnPressed_index = (node_numCBtnPressed_index + 1) % 2;
+  node_numCBtnPressedSync_index = (node_numCBtnPressedSync_index + 0) % 1;
+  node_velocityY_index = (node_velocityY_index + 0) % 1;
+  node_reflectedVelocityY_index = (node_reflectedVelocityY_index + 1) % 2;
+  node_numButtonPressed_index = (node_numButtonPressed_index + 0) % 1;
+
+  // 入力時変値の設定
+  node_cbtn[node_cbtn_index] = Input_cbtn();
+
+  // 時変値の更新
+  node_numCBtnPressed[node_numCBtnPressed_index] =
+      node_numCBtnPressed[(node_numCBtnPressed_index + 1) % 2] +
+      toCount(node_cbtn[node_cbtn_index]);
+  node_numCBtnPressedSync[node_numCBtnPressedSync_index] = Tuple3IntIntInt{
+      ._0 = node_numLBtnPressed_now(),
+      ._1 = node_numCBtnPressed[node_numCBtnPressed_index],
+      ._2 = node_numRBtnPressed_now(),
+  };
+  node_numButtonPressed[node_numButtonPressed_index] =
+      node_numCBtnPressedSync[node_numCBtnPressedSync_index];
+  node_velocityY[node_velocityY_index] =
+      node_reflectedVelocityY[(node_reflectedVelocityY_index + 1) % 2] +
+      node_cbtn[node_cbtn_index];
+  node_reflectedVelocityY[node_reflectedVelocityY_index] =
+      node_velocityY[node_velocityY_index] *
+      ((node_lastPositionY_now() - node_BALL_RADIUS < node_FLOOR_POS &&
+        node_velocityY[node_velocityY_index] < -0.0)
+           ? -node_E
+           : 1.0);
+
+  //出力
+  Output_numButtonPressed(node_numButtonPressed[node_numButtonPressed_index]);
+}
+
+void Update_rbtn() {
+  // インデックスの更新
+  node_rbtn_index = (node_rbtn_index + 0) % 1;
+  node_numRBtnPressed_index = (node_numRBtnPressed_index + 1) % 2;
+  node_numRBtnPressedSync_index = (node_numRBtnPressedSync_index + 0) % 1;
+  node_velocityX_index = (node_velocityX_index + 0) % 1;
+  node_reflectedVelocityX_index = (node_reflectedVelocityX_index + 1) % 2;
+  node_numButtonPressed_index = (node_numButtonPressed_index + 0) % 1;
+
+  // 入力時変値の設定
+  node_rbtn[node_rbtn_index] = Input_rbtn();
+
+  // 時変値の更新
+  node_numRBtnPressed[node_numRBtnPressed_index] =
+      node_numRBtnPressed[(node_numRBtnPressed_index + 1) % 2] +
+      toCount(node_rbtn[node_rbtn_index]);
+  node_numRBtnPressedSync[node_numRBtnPressedSync_index] = Tuple3IntIntInt{
+      ._0 = node_numLBtnPressed_now(),
+      ._1 = node_numCBtnPressed_now(),
+      ._2 = node_numRBtnPressed[node_numRBtnPressed_index],
+  };
+  node_numButtonPressed[node_numButtonPressed_index] =
+      node_numRBtnPressedSync[node_numRBtnPressedSync_index];
+  node_velocityX[node_velocityX_index] =
+      node_reflectedVelocityX[(node_reflectedVelocityX_index + 1) % 2] +
+      node_rbtn[node_rbtn_index];
+  node_reflectedVelocityX[node_reflectedVelocityX_index] =
+      node_velocityX[node_velocityX_index] *
+      ((node_lastPositionX_now() - node_BALL_RADIUS < node_FLOOR_POS &&
+        node_velocityX[node_velocityX_index] < 0.0)
+           ? -node_E
+           : 1.0);
+
+  //出力
+  Output_numButtonPressed(node_numButtonPressed[node_numButtonPressed_index]);
+}
+
+void mainTask(void *pvParameter) {
+  uint32_t ulNotifiedValue;
+  BaseType_t xResult;
+  for (;;) {
+    xResult =
+        xTaskNotifyWait(pdFALSE, ULONG_MAX, &ulNotifiedValue, portMAX_DELAY);
+    if (xResult == pdPASS) {
+      switch (ulNotifiedValue) {
+      case TIMER_ISR_BIT:
+        Update_timer();
+        break;
+      case LBTN_ISR_BIT:
+        Update_lbtn();
+        break;
+      case CBTN_ISR_BIT:
+        Update_cbtn();
+        break;
+      case RBTN_ISR_BIT:
+        Update_rbtn();
+        break;
       }
-      else {
-        _tmp004 = 0;
-      }
-      _tmp003 = _plus_(pvar0_cnt, _tmp004);
     }
-    _tmp002 = _tmp003;
-  }
-  else {
-    _tmp002 = numLBtnPressed_at_last;
-  }
-  *output = _tmp002;
-  return 1;
-}
-static int init_numLBtnPressed() {
-  return 0;
-}
-static int node_numCBtnPressed(int outputNumButtonPressed, int inputCBtn, int numCBtnPressed_at_last, int* output) {
-  int _tmp005;
-  if (outputNumButtonPressed == 1) {
-    int _tmp006;
-    if (1) {
-      int pvar1_cnt = numCBtnPressed_at_last;
-      int _tmp007;
-      if (inputCBtn == 1) {
-        _tmp007 = 1;
-      }
-      else {
-        _tmp007 = 0;
-      }
-      _tmp006 = _plus_(pvar1_cnt, _tmp007);
-    }
-    _tmp005 = _tmp006;
-  }
-  else {
-    _tmp005 = numCBtnPressed_at_last;
-  }
-  *output = _tmp005;
-  return 1;
-}
-static int init_numCBtnPressed() {
-  return 0;
-}
-static int node_numRBtnPressed(int outputNumButtonPressed, int inputRBtn, int numRBtnPressed_at_last, int* output) {
-  int _tmp008;
-  if (outputNumButtonPressed == 1) {
-    int _tmp009;
-    if (1) {
-      int pvar2_cnt = numRBtnPressed_at_last;
-      int _tmp010;
-      if (inputRBtn == 1) {
-        _tmp010 = 1;
-      }
-      else {
-        _tmp010 = 0;
-      }
-      _tmp009 = _plus_(pvar2_cnt, _tmp010);
-    }
-    _tmp008 = _tmp009;
-  }
-  else {
-    _tmp008 = numRBtnPressed_at_last;
-  }
-  *output = _tmp008;
-  return 1;
-}
-static int init_numRBtnPressed() {
-  return 0;
-}
-static int node_dt(double tickHistory_at_last, double tickHistory, double* output) {
-  int _tmp012;
-  double _tmp011;
-  _tmp012 = _lt__dot_(tickHistory_at_last, 0.0);
-  if (_tmp012 == 1) {
-    _tmp011 = 0.0;
-  }
-  else {
-    _tmp011 = _minus__dot_(tickHistory, tickHistory_at_last);
-  }
-  *output = _tmp011;
-  return 1;
-}
-static int node_velocityX(double reflectedVelocityX_at_last, int inputTick, double accelX, double dt, int inputLBtn, double lbtn, int inputRBtn, double rbtn, double* output) {
-  double _tmp013;
-  if (inputTick == 1) {
-    _tmp013 = _asterisk__dot_(accelX, dt);
-  }
-  else {
-    _tmp013 = 0.0;
-  }
-  double _tmp014;
-  if (inputLBtn == 1) {
-    _tmp014 = lbtn;
-  }
-  else {
-    _tmp014 = 0.0;
-  }
-  double _tmp015;
-  if (inputRBtn == 1) {
-    _tmp015 = rbtn;
-  }
-  else {
-    _tmp015 = 0.0;
-  }
-  *output = _plus__dot_(_plus__dot_(_plus__dot_(reflectedVelocityX_at_last, _tmp013), _tmp014), _tmp015);
-  return 1;
-}
-static int node_velocityY(double reflectedVelocityY_at_last, int inputTick, double accelY, double dt, int inputCBtn, double cbtn, double* output) {
-  double _tmp016;
-  if (inputTick == 1) {
-    _tmp016 = _asterisk__dot_(accelY, dt);
-  }
-  else {
-    _tmp016 = 0.0;
-  }
-  double _tmp017;
-  if (inputCBtn == 1) {
-    _tmp017 = cbtn;
-  }
-  else {
-    _tmp017 = 0.0;
-  }
-  *output = _plus__dot_(_plus__dot_(reflectedVelocityY_at_last, _tmp016), _tmp017);
-  return 1;
-}
-static int node_positionX(double positionX_at_last, int inputTick, double velocityX, double dt, double* output) {
-  double _tmp018;
-  if (inputTick == 1) {
-    _tmp018 = _asterisk__dot_(velocityX, dt);
-  }
-  else {
-    _tmp018 = 0.0;
-  }
-  *output = _plus__dot_(positionX_at_last, _tmp018);
-  return 1;
-}
-static double init_positionX() {
-  return 0.0;
-}
-static int node_positionY(double positionY_at_last, int inputTick, double velocityY, double dt, double* output) {
-  double _tmp019;
-  if (inputTick == 1) {
-    _tmp019 = _asterisk__dot_(velocityY, dt);
-  }
-  else {
-    _tmp019 = 0.0;
-  }
-  *output = _plus__dot_(positionY_at_last, _tmp019);
-  return 1;
-}
-static double init_positionY() {
-  return 80.0;
-}
-static int node_reflectedVelocityY(double velocityY, int inputTick, int inputCBtn, double positionY_at_last, double* output) {
-  int _tmp021;
-  double _tmp020;
-  _tmp021 = _vertial__vertial_(inputTick, inputCBtn);
-  if (_tmp021 == 1) {
-    int _tmp023;
-    double _tmp022;
-    _tmp023 = _anpersand_anpersand(_lt__dot_(_minus__dot_(positionY_at_last, ballRadius), floorPos), _lt__dot_(velocityY, 0.0));
-    if (_tmp023 == 1) {
-      _tmp022 = _at__minus__dot_(e);
-    }
-    else {
-      _tmp022 = 1.0;
-    }
-    _tmp020 = _tmp022;
-  }
-  else {
-    _tmp020 = 1.0;
-  }
-  *output = _asterisk__dot_(velocityY, _tmp020);
-  return 1;
-}
-static double init_reflectedVelocityY() {
-  return 0.0;
-}
-static int node_ballPosX(double positionX, double* output) {
-  *output = positionX;
-  return 1;
-}
-static int node_reflectedVelocityX(double velocityX, int inputTick, int inputLBtn, int inputRBtn, double positionX, double* output) {
-  int _tmp025;
-  double _tmp024;
-  _tmp025 = _vertial__vertial_(inputTick, _vertial__vertial_(inputLBtn, inputRBtn));
-  if (_tmp025 == 1) {
-    int _tmp027;
-    double _tmp026;
-    _tmp027 = _vertial__vertial_(_anpersand_anpersand(_lt__dot_(_minus__dot_(positionX, ballRadius), leftWallPos), _lt__dot_(velocityX, 0.0)), _anpersand_anpersand(_gt__dot_(_plus__dot_(positionX, ballRadius), rightWallPos), _gt__dot_(velocityX, 0.0)));
-    if (_tmp027 == 1) {
-      _tmp026 = _at__minus__dot_(e);
-    }
-    else {
-      _tmp026 = 1.0;
-    }
-    _tmp024 = _tmp026;
-  }
-  else {
-    _tmp024 = 1.0;
-  }
-  *output = _asterisk__dot_(velocityX, _tmp024);
-  return 1;
-}
-static double init_reflectedVelocityX() {
-  return 0.0;
-}
-static int node_ballPosY(double positionY, double* output) {
-  *output = positionY;
-  return 1;
-}
-static double init_gravityY() {
-  return _at__minus__dot_(9.8);
-}
-static double init_floorPos() {
-  return 0.0;
-}
-static double init_gravityX() {
-  return 0.0;
-}
-static double init_e() {
-  return 0.7;
-}
-static double init_rightWallPos() {
-  return 120.0;
-}
-static double init_leftWallPos() {
-  return _at__minus__dot_(120.0);
-}
-static double init_ballRadius() {
-  return 30.0;
-}
-static void refreshMark() {
-  int i;
-}
-void ActivateBounceSimulator() {
-  int current_side = 0, last_side = 1;
-  node_memory_inputTickTiming[last_side] = init_inputTickTiming();
-  node_memory_tickHistory[last_side] = init_tickHistory();
-  node_memory_numLBtnPressed[last_side] = init_numLBtnPressed();
-  node_memory_numCBtnPressed[last_side] = init_numCBtnPressed();
-  node_memory_numRBtnPressed[last_side] = init_numRBtnPressed();
-  node_memory_positionX[last_side] = init_positionX();
-  node_memory_positionY[last_side] = init_positionY();
-  node_memory_reflectedVelocityY[last_side] = init_reflectedVelocityY();
-  node_memory_reflectedVelocityX[last_side] = init_reflectedVelocityX();
-  gravityY = init_gravityY();
-  floorPos = init_floorPos();
-  gravityX = init_gravityX();
-  e = init_e();
-  rightWallPos = init_rightWallPos();
-  leftWallPos = init_leftWallPos();
-  ballRadius = init_ballRadius();
-  Counter = NodeSize + 1;
-  refreshMark();
-  while (1) {
-    Counter = 1;
-    Input(&node_memory_lbtn[current_side], &node_memory_inputLBtn[current_side], &node_memory_rbtn[current_side], &node_memory_inputRBtn[current_side], &node_memory_cbtn[current_side], &node_memory_inputCBtn[current_side], &node_memory_tick[current_side], &node_memory_time[current_side]);
-    node_inputTick(node_memory_time[current_side], node_memory_inputTickTiming[last_side], &node_memory_inputTick[current_side]);
-    Counter++;
-    node_accelX(&node_memory_accelX[current_side]);
-    Counter++;
-    node_accelY(&node_memory_accelY[current_side]);
-    Counter++;
-    node_outputNumButtonPressed(node_memory_inputLBtn[current_side], node_memory_inputRBtn[current_side], node_memory_inputCBtn[current_side], &node_memory_outputNumButtonPressed[current_side]);
-    Counter++;
-    node_inputTickTiming(node_memory_inputTickTiming[last_side], node_memory_inputTick[current_side], &node_memory_inputTickTiming[current_side]);
-    Counter++;
-    node_tickHistory(node_memory_inputTick[current_side], node_memory_tick[current_side], node_memory_tickHistory[last_side], &node_memory_tickHistory[current_side]);
-    Counter++;
-    node_outputDrawBall(node_memory_inputTick[current_side], &node_memory_outputDrawBall[current_side]);
-    Counter++;
-    node_numLBtnPressed(node_memory_outputNumButtonPressed[current_side], node_memory_inputLBtn[current_side], node_memory_numLBtnPressed[last_side], &node_memory_numLBtnPressed[current_side]);
-    Counter++;
-    node_numCBtnPressed(node_memory_outputNumButtonPressed[current_side], node_memory_inputCBtn[current_side], node_memory_numCBtnPressed[last_side], &node_memory_numCBtnPressed[current_side]);
-    Counter++;
-    node_numRBtnPressed(node_memory_outputNumButtonPressed[current_side], node_memory_inputRBtn[current_side], node_memory_numRBtnPressed[last_side], &node_memory_numRBtnPressed[current_side]);
-    Counter++;
-    node_dt(node_memory_tickHistory[last_side], node_memory_tickHistory[current_side], &node_memory_dt[current_side]);
-    Counter++;
-    node_velocityX(node_memory_reflectedVelocityX[last_side], node_memory_inputTick[current_side], node_memory_accelX[current_side], node_memory_dt[current_side], node_memory_inputLBtn[current_side], node_memory_lbtn[current_side], node_memory_inputRBtn[current_side], node_memory_rbtn[current_side], &node_memory_velocityX[current_side]);
-    Counter++;
-    node_velocityY(node_memory_reflectedVelocityY[last_side], node_memory_inputTick[current_side], node_memory_accelY[current_side], node_memory_dt[current_side], node_memory_inputCBtn[current_side], node_memory_cbtn[current_side], &node_memory_velocityY[current_side]);
-    Counter++;
-    node_positionX(node_memory_positionX[last_side], node_memory_inputTick[current_side], node_memory_velocityX[current_side], node_memory_dt[current_side], &node_memory_positionX[current_side]);
-    Counter++;
-    node_positionY(node_memory_positionY[last_side], node_memory_inputTick[current_side], node_memory_velocityY[current_side], node_memory_dt[current_side], &node_memory_positionY[current_side]);
-    Counter++;
-    node_reflectedVelocityY(node_memory_velocityY[current_side], node_memory_inputTick[current_side], node_memory_inputCBtn[current_side], node_memory_positionY[last_side], &node_memory_reflectedVelocityY[current_side]);
-    Counter++;
-    node_ballPosX(node_memory_positionX[current_side], &node_memory_ballPosX[current_side]);
-    Counter++;
-    node_reflectedVelocityX(node_memory_velocityX[current_side], node_memory_inputTick[current_side], node_memory_inputLBtn[current_side], node_memory_inputRBtn[current_side], node_memory_positionX[current_side], &node_memory_reflectedVelocityX[current_side]);
-    Counter++;
-    node_ballPosY(node_memory_positionY[current_side], &node_memory_ballPosY[current_side]);
-    Counter++;
-    Output(&node_memory_ballPosX[current_side], &node_memory_ballPosY[current_side], &node_memory_outputDrawBall[current_side], &node_memory_numLBtnPressed[current_side], &node_memory_numCBtnPressed[current_side], &node_memory_numRBtnPressed[current_side], &node_memory_outputNumButtonPressed[current_side]);
-    refreshMark();
-    current_side ^= 1;
-    last_side ^= 1;
   }
 }
+
+// メイン関数
+void setup() {
+  InitTimer(1000, 100);
+
+  InitBounceSimulator();
+
+  // タスクの生成
+  static uint8_t ucParameterToPass;
+  xTaskCreate(mainTask, "BounceSimulatorRuntime", 4096, &ucParameterToPass, 1,
+              &xHandlingTask);
+  configASSERT(xHandlingTask);
+}
+
+void loop() { delay(1); }

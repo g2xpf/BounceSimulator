@@ -1,5 +1,6 @@
 #include "BounceSimulator.h"
-#include <freertos/FreeRTOS.h>
+// #include <freertos/FreeRTOS.h>
+#include <M5Stack.h>
 
 // 時変値を管理するグローバル変数の宣言
 // 入力時変値
@@ -69,6 +70,12 @@ inline float node_numRBtnPressed_now() {
 inline float node_numLBtnPressed_now() {
   return node_numLBtnPressed[node_numLBtnPressed_index];
 }
+inline float node_positionX_now() {
+  return node_positionX[node_positionX_index];
+}
+inline float node_positionY_now() {
+  return node_positionY[node_positionY_index];
+}
 
 // 関数
 float toCount(float accel) { return 1; }
@@ -89,11 +96,7 @@ extern float Input_tick();
 extern void Output_ballPos(Tuple2FloatFloat ballPos);
 extern void Output_numButtonPressed(Tuple3IntIntInt numButtonPressed);
 
-extern void InitBounceSimulator();
-
 extern void InitTimer(int offset_ms, int interval_ms);
-
-void MainTask();
 
 // ここで全時変値の初期化を行う
 void InitBounceSimulator() {
@@ -112,12 +115,13 @@ void InitBounceSimulator() {
 bool cond_1;
 
 // 入力時変値から出力時変値の計算を行う．
-void MainTask() {}
-
 #define TIMER_ISR_BIT 0x01
 #define LBTN_ISR_BIT 0x02
 #define RBTN_ISR_BIT 0x03
 #define CBTN_ISR_BIT 0x04
+
+// タスクハンドラ
+static TaskHandle_t xHandlingTask;
 
 // タイマー割り込みのハンドラの生成
 void timerISR(void) {
@@ -157,8 +161,87 @@ void cbtnISR(void) {
   }
 }
 
+// 時変値更新を行うかを決定するフラグ
+// '(1000, 100)
+bool cond_1;
+
+// タイマー割り込みの回数を数えるカウンタ
+int Counter = 0;
 void Update_timer() {
+  // タイマー割り込み回数を更新
+  Counter++;
+
+  // フラグの更新
+  cond_1 = Counter >= 10 && (Counter - 10) % 1 == 0;
+
   // インデックスの更新
+  if (cond_1) {
+    node_tick_index = (node_tick_index + 0) % 1;
+    node_tickHistory_index = (node_tickHistory_index + 1) % 2;
+    node_dt_index = (node_dt_index + 0) % 1;
+    node_velocityX_index = (node_velocityX_index + 0) % 1;
+    node_velocityY_index = (node_tickHistory_index + 0) % 1;
+    node_reflectedVelocityX_index = (node_reflectedVelocityX_index + 1) % 2;
+    node_reflectedVelocityY_index = (node_reflectedVelocityY_index + 1) % 2;
+    node_positionX_index = (node_positionX_index + 1) % 2;
+    node_positionY_index = (node_positionY_index + 1) % 2;
+    node_ballPos_index = (node_ballPos_index + 0) % 1;
+  }
+
+  // 入力時変値の設定
+  if (cond_1) {
+    node_tick[node_tick_index] = Input_tick();
+  }
+
+  // 時変値の更新
+  if (cond_1) {
+    node_tickHistory_index[node_tickHistory_index] = node_tick[node_tick_index];
+    node_dt[node_dt_index] =
+        tickHistory[(node_tickHistory + 1) % 2] < 0.0
+            ? 0.0
+            : node_tickHistory[node_tickHistory_index] -
+                  node_tickHistory[(node_tickHistory_index + 1) % 2];
+    node_velocityX[node_velocityX_index] =
+        node_reflectedVelocityX[(node_reflectedVelocityX_index + 1) % 2] +
+        node_accelX * node_dt[node_dt_index];
+    node_velocityY[node_velocityY_index] =
+        node_reflectedVelocityY[(node_reflectedVelocityY_index + 1) % 2] +
+        node_accelY * node_dt[node_dt_index];
+    node_reflectedVelocityX[node_reflectedVelocityX_index] =
+        node_velocityX[node_velocityX_index] *
+        ((node_positionX_now() - node_BALL_RADIUS < node_LEFT_WALL_POS &&
+          node_velocityX[node_velocityX_index] < 0.0) ||
+                 (node_positionX_now() + node_BALL_RADIUS >
+                      node_RIGHT_WALL_POS &&
+                  node_velocityX[node_velocityX_index] > 0.0)
+             ? -node_E
+             : 1.0);
+    node_reflectedVelocityY[node_reflectedVelocityY_index] =
+        node_velocityY[node_velocityY_index] *
+        ((node_positionY_now() - node_BALL_RADIUS < node_LEFT_WALL_POS &&
+          node_velocityY[node_velocityY_index] < 0.0) ||
+                 (node_positionY_now() + node_BALL_RADIUS >
+                      node_RIGHT_WALL_POS &&
+                  node_velocityY[node_velocityY_index] > 0.0)
+             ? -node_E
+             : 1.0);
+    node_positionX[node_positionX_index] =
+        node_positionX[node_positionX_index] +
+        node_velocityX[node_velocityX_index] * node_dt[node_dt_index];
+    node_positionY[node_positionY_index] =
+        node_positionY[node_positionY_index] +
+        node_velocityY[node_velocityY_index] * node_dt[node_dt_index];
+
+    node_ballPos[node_ballPos_index] = Tuple2FloatFloat{
+      ._0 : node_positionX[node_positionX_index],
+      ._1 : node_positionY[node_positionY_index],
+    };
+  }
+
+  // 出力
+  if (cond_1) {
+    Output_ballPos(node_ballPos[node_ballPos_index]);
+  }
 }
 
 void Update_lbtn() {
@@ -187,6 +270,7 @@ void Update_lbtn() {
       node_reflectedVelocityX[(node_reflectedVelocityX_index + 1) % 2] +
       node_lbtn[node_lbtn_index];
 
+  //出力
   Output_numButtonPressed(node_numButtonPressed[node_numButtonPressed_index]);
 }
 
@@ -216,6 +300,7 @@ void Update_cbtn() {
       node_reflectedVelocityY[(node_reflectedVelocityY_index + 1) % 2] +
       node_cbtn[node_cbtn_index];
 
+  //出力
   Output_numButtonPressed(node_numButtonPressed[node_numButtonPressed_index]);
 }
 
@@ -245,12 +330,12 @@ void Update_rbtn() {
       node_reflectedVelocityX[(node_reflectedVelocityX_index + 1) % 2] +
       node_lbtn[node_lbtn_index];
 
+  //出力
   Output_numButtonPressed(node_numButtonPressed[node_numButtonPressed_index]);
 }
 
 void mainTask() {
   uint32_t ulNotifiedValue;
-  const TickType_t xMaxBlockTime = pdMS_TO_TICKS(500);
   BaseType_t xResult;
   for (;;) {
     xResult =
@@ -273,14 +358,12 @@ void mainTask() {
         }
     }
   }
-  else {
-    // prvCheckForErrors();
-  }
-}
 }
 
 // メイン関数
 void setup() {
+  InitTimer(1000, 100);
+
   InitBounceSimulator();
 
   // タスクの生成
