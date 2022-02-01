@@ -6,6 +6,9 @@
 - Tools
     - [PlatformIO](https://platformio.org/)
 
+## Preview
+![Preview](https://github.com/g2xpf/BounceSimulator/blob/images/preview.jpg)
+
 ## EvEmfrp version
 ```sh
 cd evemfrp
