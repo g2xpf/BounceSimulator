@@ -98,7 +98,7 @@ extern float Input_tick();
 extern void Output_ballPos(const Tuple2FloatFloat &ballPos);
 extern void Output_numButtonPressed(const Tuple3IntIntInt &numButtonPressed);
 
-extern void InitTimer(int offset_ms, int interval_ms);
+extern void Initialize(int offset_ms, int interval_ms);
 
 // ここで全時変値の初期化を行う
 void InitBounceSimulator() {
@@ -385,7 +385,7 @@ void mainTask(void *pvParameter) {
 
 // メイン関数
 void setup() {
-  InitTimer(1000, 100);
+  Initialize(1000, 100);
 
   InitBounceSimulator();
 

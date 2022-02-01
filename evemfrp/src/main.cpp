@@ -7,6 +7,7 @@
 #include <LovyanGFX.hpp>
 
 // 定数
+const int beepDuration = 50;
 const int fontSize = 7; // M5Stack の TextSize(1) のサイズ
 const int displayWidth = 320;
 const int displayHeight = 240;
@@ -100,48 +101,32 @@ float Input_tick() {
 // 出力時変値を用いた処理を記述する．
 void Output_ballPos(const Tuple2FloatFloat &ballPos) {
   // output ballPos
-
-  static int callCount = 0;
-  callCount++;
-  // lcd.setCursor(30, 30);
-  // lcd.printf("{%d} ballPos: (%lf, %lf)", callCount, ballPos._0, ballPos._1);
   drawBall(ballPos._0, ballPos._1);
 }
 
 void Output_numButtonPressed(const Tuple3IntIntInt &numButtonPressed) {
   // output numButtonPressed
-
-  static int callCount = 0;
-  callCount++;
-  lcd.setCursor(30, 30 + fontSize);
-  // lcd.printf("{%d} press state: (%d, %d, %d)", callCount,
-  // numButtonPressed._0,
-  //            numButtonPressed._1, numButtonPressed._2);
-
-  drawBtnCount(numButtonPressed._0, numButtonPressed._1,
-               numButtonPressed._2); // M5.Speaker.tone(440, 50);
+  drawBtnCount(numButtonPressed._0, numButtonPressed._1, numButtonPressed._2);
+  M5.Speaker.beep();
+  delay(beepDuration);
+  M5.Speaker.mute();
 }
 
 hw_timer_t *timer1 = nullptr;
-void InitTimer(int offset_ms, int interval_ms) {
-  // ここでタイマーの初期化を行う．
+void Initialize(int offset_ms, int interval_ms) {
+  // ここでハードウェアの初期化を行う．
   // 引数の offset と interval は EvEmfrp の処理系によって計算された
   // タイマー割り込みの開始時刻と周期であり，この値を用いてプログラマが
   // タイマーを初期化する．
 
   M5.begin();
+  M5.Speaker.begin();
   M5.Speaker.setVolume(1);
+  M5.Speaker.setBeep(440, beepDuration);
 
   lcd.init();
   lcd.setRotation(1);
   lcd.setBrightness(128);
-
-  drawTitle();
-
-  simulatorSprite.createSprite(simulatorAreaWidth, simulatorAreaHeight);
-  textAreaSprite.createSprite(textAreaWidth, textAreaHeight);
-
-  drawBtnCount(0, 0, 0);
 
   // 各種割り込み設定
   timer1 = timerBegin(0, 80, true);
@@ -161,4 +146,11 @@ void InitTimer(int offset_ms, int interval_ms) {
   // 右ボタン
   pinMode(GPIO_NUM_37, INPUT);
   attachInterrupt(GPIO_NUM_37, rbtnISR, FALLING);
+
+  drawTitle();
+
+  simulatorSprite.createSprite(simulatorAreaWidth, simulatorAreaHeight);
+  textAreaSprite.createSprite(textAreaWidth, textAreaHeight);
+
+  drawBtnCount(0, 0, 0);
 }

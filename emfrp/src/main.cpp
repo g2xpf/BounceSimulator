@@ -7,6 +7,7 @@
 #include <BounceSimulator.h>
 
 // 定数
+const int beepDuration = 50;
 const int fontSize = 7; // M5Stack の TextSize(1) のサイズ
 const int displayWidth = 320;
 const int displayHeight = 240;
@@ -109,13 +110,17 @@ void Output(double *ballPosX, double *ballPosY, int *outputDrawBall,
   if (*outputNumButtonPressed) {
     drawBtnCount(*numLBtnPressed, *numCBtnPressed, *numRBtnPressed);
 
-    M5.Speaker.tone(440, 50);
+    M5.Speaker.beep();
+    delay(50);
+    M5.Speaker.mute();
   }
 }
 
 void setup() {
   M5.begin();
+  M5.Speaker.begin();
   M5.Speaker.setVolume(1);
+  M5.Speaker.setBeep(440, beepDuration);
 
   lcd.init();
   lcd.setRotation(1);
