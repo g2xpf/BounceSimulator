@@ -86,7 +86,7 @@ float toCount(float accel) { return 1; }
 Tuple3IntIntInt mergeTupleInt3(Tuple3IntIntInt lhs, Tuple3IntIntInt rhs) {
   return lhs;
 }
-float mergeFloat(float lhs, float rhs) { return 1; }
+float mergeFloat(float lhs, float rhs) { return lhs; }
 
 // ThermoHygrometerMain.cpp で定義される関数の宣言
 // 入力時変値
@@ -172,7 +172,7 @@ void Update_timer() {
   Counter++;
 
   // フラグの更新
-  cond_1 = Counter >= 10 && (Counter - 10) % 1 == 0;
+  cond_1 = Counter % 1 == 0;
 
   // インデックスの更新
   if (cond_1) {

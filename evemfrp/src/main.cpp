@@ -113,6 +113,18 @@ void Output_numButtonPressed(const Tuple3IntIntInt &numButtonPressed) {
 }
 
 hw_timer_t *timer1 = nullptr;
+hw_timer_t *timer2 = nullptr;
+
+void IRAM_ATTR startTimer2ISR() {
+  timerAlarmEnable(timer2);
+  timerISR();
+  timerEnd(timer1);
+}
+void IRAM_ATTR callTimerISR() { timerISR(); }
+void IRAM_ATTR callLbtnISR() { lbtnISR(); }
+void IRAM_ATTR callCbtnISR() { cbtnISR(); }
+void IRAM_ATTR callRbtnISR() { rbtnISR(); }
+
 void Initialize(int offset_ms, int interval_ms) {
   // ここでハードウェアの初期化を行う．
   // 引数の offset と interval は EvEmfrp の処理系によって計算された
@@ -130,22 +142,27 @@ void Initialize(int offset_ms, int interval_ms) {
 
   // 各種割り込み設定
   timer1 = timerBegin(0, 80, true);
+  timer2 = timerBegin(1, 80, true);
 
-  timerAttachInterrupt(timer1, &timerISR, true);
-  timerAlarmWrite(timer1, interval_ms * 1000, true);
+  timerAttachInterrupt(timer1, startTimer2ISR, true);
+  timerAlarmWrite(timer1, offset_ms * 1000, false);
+
+  timerAttachInterrupt(timer2, callTimerISR, true);
+  timerAlarmWrite(timer2, interval_ms * 1000, true);
+
   timerAlarmEnable(timer1);
 
   // 左ボタン
   pinMode(GPIO_NUM_39, INPUT);
-  attachInterrupt(GPIO_NUM_39, lbtnISR, FALLING);
+  attachInterrupt(GPIO_NUM_39, callLbtnISR, FALLING);
 
   // 中央ボタン
   pinMode(GPIO_NUM_38, INPUT);
-  attachInterrupt(GPIO_NUM_38, cbtnISR, FALLING);
+  attachInterrupt(GPIO_NUM_38, callCbtnISR, FALLING);
 
   // 右ボタン
   pinMode(GPIO_NUM_37, INPUT);
-  attachInterrupt(GPIO_NUM_37, rbtnISR, FALLING);
+  attachInterrupt(GPIO_NUM_37, callRbtnISR, FALLING);
 
   drawTitle();
 
