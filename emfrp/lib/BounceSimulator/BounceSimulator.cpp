@@ -67,9 +67,9 @@ static int init_numRBtnPressed();
 static int node_dt(double, double, double*);
 static int node_velocityX(double, int, double, double, int, double, int, double, double*);
 static int node_velocityY(double, int, double, double, int, double, double*);
-static int node_reflectedVelocityX(double, int, double, double*);
+static int node_reflectedVelocityX(double, int, int, int, double, double*);
 static double init_reflectedVelocityX();
-static int node_reflectedVelocityY(double, int, double, double*);
+static int node_reflectedVelocityY(double, int, int, double, double*);
 static double init_reflectedVelocityY();
 static int node_positionX(double, int, double, double, double*);
 static double init_positionX();
@@ -136,22 +136,17 @@ static int node_outputDrawBall(int inputTick, int* output) {
   *output = inputTick;
   return 1;
 }
-static int node_numLBtnPressed(int outputNumButtonPressed, int inputLBtn, int numLBtnPressed_at_last, int* output) {
+static int node_numLBtnPressed(int outputNumButtonPressed, int numLBtnPressed_at_last, int inputLBtn, int* output) {
   int _tmp002;
   if (outputNumButtonPressed == 1) {
     int _tmp003;
-    if (1) {
-      int pvar0_cnt = numLBtnPressed_at_last;
-      int _tmp004;
-      if (inputLBtn == 1) {
-        _tmp004 = 1;
-      }
-      else {
-        _tmp004 = 0;
-      }
-      _tmp003 = _plus_(pvar0_cnt, _tmp004);
+    if (inputLBtn == 1) {
+      _tmp003 = 1;
     }
-    _tmp002 = _tmp003;
+    else {
+      _tmp003 = 0;
+    }
+    _tmp002 = _plus_(numLBtnPressed_at_last, _tmp003);
   }
   else {
     _tmp002 = numLBtnPressed_at_last;
@@ -162,183 +157,177 @@ static int node_numLBtnPressed(int outputNumButtonPressed, int inputLBtn, int nu
 static int init_numLBtnPressed() {
   return 0;
 }
-static int node_numCBtnPressed(int outputNumButtonPressed, int inputCBtn, int numCBtnPressed_at_last, int* output) {
-  int _tmp005;
+static int node_numCBtnPressed(int outputNumButtonPressed, int numCBtnPressed_at_last, int inputCBtn, int* output) {
+  int _tmp004;
   if (outputNumButtonPressed == 1) {
-    int _tmp006;
-    if (1) {
-      int pvar1_cnt = numCBtnPressed_at_last;
-      int _tmp007;
-      if (inputCBtn == 1) {
-        _tmp007 = 1;
-      }
-      else {
-        _tmp007 = 0;
-      }
-      _tmp006 = _plus_(pvar1_cnt, _tmp007);
+    int _tmp005;
+    if (inputCBtn == 1) {
+      _tmp005 = 1;
     }
-    _tmp005 = _tmp006;
+    else {
+      _tmp005 = 0;
+    }
+    _tmp004 = _plus_(numCBtnPressed_at_last, _tmp005);
   }
   else {
-    _tmp005 = numCBtnPressed_at_last;
+    _tmp004 = numCBtnPressed_at_last;
   }
-  *output = _tmp005;
+  *output = _tmp004;
   return 1;
 }
 static int init_numCBtnPressed() {
   return 0;
 }
-static int node_numRBtnPressed(int outputNumButtonPressed, int inputRBtn, int numRBtnPressed_at_last, int* output) {
-  int _tmp008;
+static int node_numRBtnPressed(int outputNumButtonPressed, int numRBtnPressed_at_last, int inputRBtn, int* output) {
+  int _tmp006;
   if (outputNumButtonPressed == 1) {
-    int _tmp009;
-    if (1) {
-      int pvar2_cnt = numRBtnPressed_at_last;
-      int _tmp010;
-      if (inputRBtn == 1) {
-        _tmp010 = 1;
-      }
-      else {
-        _tmp010 = 0;
-      }
-      _tmp009 = _plus_(pvar2_cnt, _tmp010);
+    int _tmp007;
+    if (inputRBtn == 1) {
+      _tmp007 = 1;
     }
-    _tmp008 = _tmp009;
+    else {
+      _tmp007 = 0;
+    }
+    _tmp006 = _plus_(numRBtnPressed_at_last, _tmp007);
   }
   else {
-    _tmp008 = numRBtnPressed_at_last;
+    _tmp006 = numRBtnPressed_at_last;
   }
-  *output = _tmp008;
+  *output = _tmp006;
   return 1;
 }
 static int init_numRBtnPressed() {
   return 0;
 }
 static int node_dt(double tickHistory_at_last, double tickHistory, double* output) {
-  int _tmp012;
-  double _tmp011;
-  _tmp012 = _lt__dot_(tickHistory_at_last, 0.0);
-  if (_tmp012 == 1) {
-    _tmp011 = 0.0;
+  int _tmp009;
+  double _tmp008;
+  _tmp009 = _lt__dot_(tickHistory_at_last, 0.0);
+  if (_tmp009 == 1) {
+    _tmp008 = 0.0;
   }
   else {
-    _tmp011 = _minus__dot_(tickHistory, tickHistory_at_last);
+    _tmp008 = _minus__dot_(tickHistory, tickHistory_at_last);
   }
-  *output = _tmp011;
+  *output = _tmp008;
   return 1;
 }
 static int node_velocityX(double reflectedVelocityX_at_last, int inputTick, double accelX, double dt, int inputLBtn, double lbtn, int inputRBtn, double rbtn, double* output) {
+  double _tmp010;
+  if (inputTick == 1) {
+    _tmp010 = _asterisk__dot_(accelX, dt);
+  }
+  else {
+    _tmp010 = 0.0;
+  }
+  double _tmp011;
+  if (inputLBtn == 1) {
+    _tmp011 = lbtn;
+  }
+  else {
+    _tmp011 = 0.0;
+  }
+  double _tmp012;
+  if (inputRBtn == 1) {
+    _tmp012 = rbtn;
+  }
+  else {
+    _tmp012 = 0.0;
+  }
+  *output = _plus__dot_(_plus__dot_(_plus__dot_(reflectedVelocityX_at_last, _tmp010), _tmp011), _tmp012);
+  return 1;
+}
+static int node_velocityY(double reflectedVelocityY_at_last, int inputTick, double accelY, double dt, int inputCBtn, double cbtn, double* output) {
   double _tmp013;
   if (inputTick == 1) {
-    _tmp013 = _asterisk__dot_(accelX, dt);
+    _tmp013 = _asterisk__dot_(accelY, dt);
   }
   else {
     _tmp013 = 0.0;
   }
   double _tmp014;
-  if (inputLBtn == 1) {
-    _tmp014 = lbtn;
+  if (inputCBtn == 1) {
+    _tmp014 = cbtn;
   }
   else {
     _tmp014 = 0.0;
   }
+  *output = _plus__dot_(_plus__dot_(reflectedVelocityY_at_last, _tmp013), _tmp014);
+  return 1;
+}
+static int node_reflectedVelocityX(double velocityX, int inputTick, int inputLBtn, int inputRBtn, double positionX_at_last, double* output) {
+  int _tmp016;
   double _tmp015;
-  if (inputRBtn == 1) {
-    _tmp015 = rbtn;
-  }
-  else {
-    _tmp015 = 0.0;
-  }
-  *output = _plus__dot_(_plus__dot_(_plus__dot_(reflectedVelocityX_at_last, _tmp013), _tmp014), _tmp015);
-  return 1;
-}
-static int node_velocityY(double reflectedVelocityY_at_last, int inputTick, double accelY, double dt, int inputCBtn, double cbtn, double* output) {
-  double _tmp016;
-  if (inputTick == 1) {
-    _tmp016 = _asterisk__dot_(accelY, dt);
-  }
-  else {
-    _tmp016 = 0.0;
-  }
-  double _tmp017;
-  if (inputCBtn == 1) {
-    _tmp017 = cbtn;
-  }
-  else {
-    _tmp017 = 0.0;
-  }
-  *output = _plus__dot_(_plus__dot_(reflectedVelocityY_at_last, _tmp016), _tmp017);
-  return 1;
-}
-static int node_reflectedVelocityX(double velocityX, int inputTick, double positionX_at_last, double* output) {
-  double _tmp018;
-  if (inputTick == 1) {
-    int _tmp020;
-    double _tmp019;
-    _tmp020 = _vertial__vertial_(_anpersand_anpersand(_lt__dot_(_minus__dot_(positionX_at_last, ballRadius), leftWallPos), _lt__dot_(velocityX, 0.0)), _anpersand_anpersand(_gt__dot_(_plus__dot_(positionX_at_last, ballRadius), rightWallPos), _gt__dot_(velocityX, 0.0)));
-    if (_tmp020 == 1) {
-      _tmp019 = _at__minus__dot_(e);
+  _tmp016 = _vertial__vertial_(inputTick, _vertial__vertial_(inputLBtn, inputRBtn));
+  if (_tmp016 == 1) {
+    int _tmp018;
+    double _tmp017;
+    _tmp018 = _vertial__vertial_(_anpersand_anpersand(_lt__dot_(_minus__dot_(positionX_at_last, ballRadius), leftWallPos), _lt__dot_(velocityX, 0.0)), _anpersand_anpersand(_gt__dot_(_plus__dot_(positionX_at_last, ballRadius), rightWallPos), _gt__dot_(velocityX, 0.0)));
+    if (_tmp018 == 1) {
+      _tmp017 = _at__minus__dot_(e);
     }
     else {
-      _tmp019 = 1.0;
+      _tmp017 = 1.0;
     }
-    _tmp018 = _tmp019;
+    _tmp015 = _tmp017;
   }
   else {
-    _tmp018 = 1.0;
+    _tmp015 = 1.0;
   }
-  *output = _asterisk__dot_(velocityX, _tmp018);
+  *output = _asterisk__dot_(velocityX, _tmp015);
   return 1;
 }
 static double init_reflectedVelocityX() {
   return 0.0;
 }
-static int node_reflectedVelocityY(double velocityY, int inputTick, double positionY_at_last, double* output) {
-  double _tmp021;
-  if (inputTick == 1) {
-    int _tmp023;
-    double _tmp022;
-    _tmp023 = _anpersand_anpersand(_lt__dot_(_minus__dot_(positionY_at_last, ballRadius), floorPos), _lt__dot_(velocityY, 0.0));
-    if (_tmp023 == 1) {
-      _tmp022 = _at__minus__dot_(e);
+static int node_reflectedVelocityY(double velocityY, int inputTick, int inputCBtn, double positionY_at_last, double* output) {
+  int _tmp020;
+  double _tmp019;
+  _tmp020 = _vertial__vertial_(inputTick, inputCBtn);
+  if (_tmp020 == 1) {
+    int _tmp022;
+    double _tmp021;
+    _tmp022 = _anpersand_anpersand(_lt__dot_(_minus__dot_(positionY_at_last, ballRadius), floorPos), _lt__dot_(velocityY, 0.0));
+    if (_tmp022 == 1) {
+      _tmp021 = _at__minus__dot_(e);
     }
     else {
-      _tmp022 = 1.0;
+      _tmp021 = 1.0;
     }
-    _tmp021 = _tmp022;
+    _tmp019 = _tmp021;
   }
   else {
-    _tmp021 = 1.0;
+    _tmp019 = 1.0;
   }
-  *output = _asterisk__dot_(velocityY, _tmp021);
+  *output = _asterisk__dot_(velocityY, _tmp019);
   return 1;
 }
 static double init_reflectedVelocityY() {
   return 0.0;
 }
 static int node_positionX(double positionX_at_last, int inputTick, double reflectedVelocityX, double dt, double* output) {
-  double _tmp024;
+  double _tmp023;
   if (inputTick == 1) {
-    _tmp024 = _asterisk__dot_(reflectedVelocityX, dt);
+    _tmp023 = _asterisk__dot_(reflectedVelocityX, dt);
   }
   else {
-    _tmp024 = 0.0;
+    _tmp023 = 0.0;
   }
-  *output = _plus__dot_(positionX_at_last, _tmp024);
+  *output = _plus__dot_(positionX_at_last, _tmp023);
   return 1;
 }
 static double init_positionX() {
   return 0.0;
 }
 static int node_positionY(double positionY_at_last, int inputTick, double reflectedVelocityY, double dt, double* output) {
-  double _tmp025;
+  double _tmp024;
   if (inputTick == 1) {
-    _tmp025 = _asterisk__dot_(reflectedVelocityY, dt);
+    _tmp024 = _asterisk__dot_(reflectedVelocityY, dt);
   }
   else {
-    _tmp025 = 0.0;
+    _tmp024 = 0.0;
   }
-  *output = _plus__dot_(positionY_at_last, _tmp025);
+  *output = _plus__dot_(positionY_at_last, _tmp024);
   return 1;
 }
 static double init_positionY() {
@@ -413,11 +402,11 @@ void ActivateBounceSimulator() {
     Counter++;
     node_outputDrawBall(node_memory_inputTick[current_side], &node_memory_outputDrawBall[current_side]);
     Counter++;
-    node_numLBtnPressed(node_memory_outputNumButtonPressed[current_side], node_memory_inputLBtn[current_side], node_memory_numLBtnPressed[last_side], &node_memory_numLBtnPressed[current_side]);
+    node_numLBtnPressed(node_memory_outputNumButtonPressed[current_side], node_memory_numLBtnPressed[last_side], node_memory_inputLBtn[current_side], &node_memory_numLBtnPressed[current_side]);
     Counter++;
-    node_numCBtnPressed(node_memory_outputNumButtonPressed[current_side], node_memory_inputCBtn[current_side], node_memory_numCBtnPressed[last_side], &node_memory_numCBtnPressed[current_side]);
+    node_numCBtnPressed(node_memory_outputNumButtonPressed[current_side], node_memory_numCBtnPressed[last_side], node_memory_inputCBtn[current_side], &node_memory_numCBtnPressed[current_side]);
     Counter++;
-    node_numRBtnPressed(node_memory_outputNumButtonPressed[current_side], node_memory_inputRBtn[current_side], node_memory_numRBtnPressed[last_side], &node_memory_numRBtnPressed[current_side]);
+    node_numRBtnPressed(node_memory_outputNumButtonPressed[current_side], node_memory_numRBtnPressed[last_side], node_memory_inputRBtn[current_side], &node_memory_numRBtnPressed[current_side]);
     Counter++;
     node_dt(node_memory_tickHistory[last_side], node_memory_tickHistory[current_side], &node_memory_dt[current_side]);
     Counter++;
@@ -425,9 +414,9 @@ void ActivateBounceSimulator() {
     Counter++;
     node_velocityY(node_memory_reflectedVelocityY[last_side], node_memory_inputTick[current_side], node_memory_accelY[current_side], node_memory_dt[current_side], node_memory_inputCBtn[current_side], node_memory_cbtn[current_side], &node_memory_velocityY[current_side]);
     Counter++;
-    node_reflectedVelocityX(node_memory_velocityX[current_side], node_memory_inputTick[current_side], node_memory_positionX[last_side], &node_memory_reflectedVelocityX[current_side]);
+    node_reflectedVelocityX(node_memory_velocityX[current_side], node_memory_inputTick[current_side], node_memory_inputLBtn[current_side], node_memory_inputRBtn[current_side], node_memory_positionX[last_side], &node_memory_reflectedVelocityX[current_side]);
     Counter++;
-    node_reflectedVelocityY(node_memory_velocityY[current_side], node_memory_inputTick[current_side], node_memory_positionY[last_side], &node_memory_reflectedVelocityY[current_side]);
+    node_reflectedVelocityY(node_memory_velocityY[current_side], node_memory_inputTick[current_side], node_memory_inputCBtn[current_side], node_memory_positionY[last_side], &node_memory_reflectedVelocityY[current_side]);
     Counter++;
     node_positionX(node_memory_positionX[last_side], node_memory_inputTick[current_side], node_memory_reflectedVelocityX[current_side], node_memory_dt[current_side], &node_memory_positionX[current_side]);
     Counter++;

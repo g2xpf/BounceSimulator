@@ -22,7 +22,6 @@ use Std
 
 
 # 定数
-data deltaAccel     = 2.0               # 左右のボタンによって変化する加速度の大きさ
 data ballRadius     = 30.0              # 円の半径
 data gravityX       = 0.0               # 水平方向の重力加速度
 data gravityY       = -.9.8             # 垂直方向の重力加速度
@@ -30,21 +29,20 @@ data leftWallPos    = -.120.0           # 左の壁の位置
 data rightWallPos   = 120.0             # 右の壁の位置
 data floorPos       = 0.0               # 床の位置
 data e              = 0.7               # 反発係数
-data dt             = 0.1               # 描画時間間隔
 
 # 出力時変値
 # num{L,C,R}BtnPressed の計算
 node init[0] numLBtnPressed =
   if outputNumButtonPressed
-    then numLBtnPressed@last of cnt -> cnt + (if inputLBtn then 1 else 0)
+    then numLBtnPressed@last + (if inputLBtn then 1 else 0)
     else numLBtnPressed@last
 node init[0] numCBtnPressed =
   if outputNumButtonPressed
-    then numCBtnPressed@last of cnt -> cnt + (if inputCBtn then 1 else 0)
+    then numCBtnPressed@last + (if inputCBtn then 1 else 0)
     else numCBtnPressed@last
 node init[0] numRBtnPressed =
   if outputNumButtonPressed
-    then numRBtnPressed@last of cnt -> cnt + (if inputRBtn then 1 else 0)
+    then numRBtnPressed@last + (if inputRBtn then 1 else 0)
     else numRBtnPressed@last
 
 # ballPos の計算
@@ -93,7 +91,7 @@ node init[0.0] positionX = positionX@last +. (
     else 0.0)
 node init[80.0] positionY = positionY@last +. (
   if inputTick
-    then reflectedVelocityX *. dt
+    then reflectedVelocityY *. dt
     else 0.0)
 node ballPosX = positionX
 node ballPosY = positionY
