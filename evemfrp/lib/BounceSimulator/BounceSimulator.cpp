@@ -168,9 +168,6 @@ bool cond_1;
 // タイマー割り込みの回数を数えるカウンタ
 int Counter = 0;
 void Update_timer() {
-  // タイマー割り込み回数を更新
-  Counter++;
-
   // フラグの更新
   cond_1 = Counter % 1 == 0;
 
@@ -245,6 +242,9 @@ void Update_timer() {
   if (cond_1) {
     Output_ballPos(node_ballPos[node_ballPos_index]);
   }
+
+  // タイマー割り込み回数を更新
+  Counter++;
 }
 
 void Update_lbtn() {
